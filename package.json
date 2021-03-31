@@ -1,0 +1,13 @@
+{
+  "name": "declare-suas-acoes",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "André Dias",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "puppeteer": "^8.0.0"
+  }
+}
