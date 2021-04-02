@@ -1,12 +1,28 @@
 import puppeteer from "puppeteer";
 import _ from "lodash";
-import { LOGIN_URL, SELECTORS, BASE_URL } from "./helper";
-import { getInfo } from "./crawlerInfo";
 import moment from "moment";
+
+import {
+  LOGIN_URL,
+  SELECTORS,
+  BASE_URL,
+  VALUES,
+  DATE_FORMAT,
+  ACTUAL_YEAR,
+  LAST_YEARS,
+} from "./constants";
+
+import { getCNPJInfo, getInfo } from "./crawler";
+import {
+  formatPrice,
+  normalizeObject,
+  normalizeObjectWhenBuy,
+  normalizeObjectWhenSell,
+} from "./helper";
 
 const width = 1024;
 const height = 1600;
-const headless = false;
+const headless = true;
 
 const selectedYear = "2020";
 // atualizar a data tbm no arquivo crawlerInfo.js
@@ -35,75 +51,100 @@ const password = "SENHA";
 
   const agents = rawAgents.filter((agent) => agent != -1);
 
-  let results = [];
+  let crawlerResults = [];
 
   await page.close();
 
   for (const agent of agents) {
     const result = await getInfo(browser, agent);
-    results = [...results, result];
+    crawlerResults = [...crawlerResults, result];
   }
 
-  const mappedValues = _.chain(results)
+  const flatMapAndGroupById = _.chain(crawlerResults)
     .flatten()
     .map((value) => {
       return {
-        date: value["Data do Negócio"],
-        op: value["Compra/Venda"],
-        id: value["Código Negociação"],
-        quantity: Number(value["Quantidade"]),
-        price: Number(value["Preço (R$)"].replace(",", ".")),
-        totalPrice: Number(value["Valor Total(R$)"].replace(",", ".")),
+        date: value[VALUES.DATE],
+        op: value[VALUES.OP],
+        id: value[VALUES.ID],
+        quantity: Number(value[VALUES.QUANTITY]),
+        price: formatPrice(value[VALUES.PRICE]),
+        totalPrice: Number(formatPrice(value[VALUES.TOTAL_PRICE])),
       };
     })
     .groupBy("id")
     .value();
 
-  const groupedByYear = Object.entries(mappedValues).map((entry) => {
-    const [key, value] = entry;
-    return {
-      key,
-      values: _.groupBy(value, (item) => {
-        const year = moment(item.date, "DD/MM/YYYY").year();
-        return year == selectedYear ? "actual-year" : "last-years";
-      }),
-    };
-  });
+  const groupedByYear = Object.entries(flatMapAndGroupById).map(
+    ([key, value]) => {
+      return {
+        key,
+        values: _.groupBy(value, (item) => {
+          const year = moment(item.date, DATE_FORMAT).year();
+          return year == selectedYear ? ACTUAL_YEAR : LAST_YEARS;
+        }),
+      };
+    }
+  );
 
-  const finalResults = groupedByYear.map(({ key, values }) => {
-    const actualYear = _.reduce(
-      values["actual-year"].filter((item) => item.op == "C"),
-      (agg, item) => {
-        return {
-          ...agg,
-          quantity: agg.quantity + item.quantity,
-          price: (agg.price + item.price) / 2,
-          totalPrice: agg.totalPrice + item.totalPrice,
-        };
-      }
-    );
+  const aggregatedValues = groupedByYear.map(({ key, values }) => {
+    const lastYearsValues = values[LAST_YEARS] || [];
 
-    const lastYearsValues = values["last-years"] || [];
+    const hasOnlyOneValueLastYear = lastYearsValues.length == 1;
 
-    const totalLastYears =
-      lastYearsValues.length == 1
-        ? lastYearsValues[0].totalPrice
-        : _.reduce(
-            lastYearsValues.filter((item) => item.op == "C"),
-            (agg, item) => agg.totalPrice + item.totalPrice
-          );
+    const lastYears = hasOnlyOneValueLastYear
+      ? normalizeObject(lastYearsValues[0])
+      : _.reduce(lastYearsValues, (agg, item) => {
+          if (item.op == "C") {
+            return normalizeObjectWhenBuy(agg, item);
+          } else {
+            return normalizeObjectWhenSell(agg, item);
+          }
+        });
+
+    const actualYearValues = values[ACTUAL_YEAR] || [];
+
+    const lastYearsPlusActualYear =
+      lastYears != null ? [lastYears, ...actualYearValues] : actualYearValues;
+
+    const hasOnlyOneValueActualYear = lastYearsPlusActualYear.length == 1;
+
+    const actualYear = hasOnlyOneValueActualYear
+      ? normalizeObject(lastYearsPlusActualYear[0])
+      : _.reduce(lastYearsPlusActualYear, (agg, item) => {
+          if (item.op == "C") {
+            return normalizeObjectWhenBuy(agg, item);
+          } else {
+            return normalizeObjectWhenSell(agg, item);
+          }
+        });
 
     return {
       key,
       actualYear,
-      lastYears: totalLastYears,
+      lastYears,
     };
   });
 
-  console.log(finalResults);
+  const formatedResult = await Promise.all(
+    aggregatedValues.map(async ({ key, actualYear, lastYears }) => {
+      let cnpj = null;
 
-  // get CNPJ
-  // format to imposto de renda
+      if (!key.includes("34")) {
+        cnpj = await getCNPJInfo(browser, key);
+      }
+
+      return {
+        cnpj,
+        discriminacao: `${actualYear.quantity} AÇÕES ${key} PELO VALOR TOTAL DE R$ ${actualYear.totalPrice}, ONDE CADA AÇÃO CUSTOU O PREÇO MÉDIO DE R$ ${actualYear.price}`,
+        valorNoFinalDoAnoPassado:
+          lastYears != null ? lastYears.totalPrice : lastYears,
+        valorNoFinalDoAnoAtual: actualYear.totalPrice,
+      };
+    })
+  );
+
+  console.log(formatedResult);
 
   await browser.close();
 })();
