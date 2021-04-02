@@ -5,9 +5,18 @@
   "author": "André Dias",
   "license": "MIT",
   "scripts": {
-    "dev": "node index.js"
+    "start": "babel-node ./index.js"
   },
   "dependencies": {
+    "html-table-to-json": "^1.0.0",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.1",
     "puppeteer": "^8.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.13.14",
+    "@babel/node": "^7.13.13",
+    "@babel/plugin-proposal-class-properties": "^7.13.0",
+    "@babel/preset-env": "^7.13.12"
   }
 }
