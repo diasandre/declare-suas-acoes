@@ -5,7 +5,7 @@
   \_/ \_/ \_/ \_/ \_/ \_/ \_/   \_/ \_/ \_/ \_/   \_/ \_/ \_/ \_/ \_/ 
 </pre>  
 
-#### Para facilitar a declaração do imposto de renda para quem possui ações, como bens e direitos. 💲
+#### Facilitando a declaração do imposto de renda para quem possui ações. 💲
                                                                                                                                                                
 ## Como funciona:
 Utilizando o Puppeteer, o crawler acessa o CEI e busca todas as informações necessárias para realizar a declaração no imposto de renda incluindo o CNPJ da empresas.
@@ -33,6 +33,6 @@ O código retorna uma lista do objeto:
 - Tratando para quando ação é vendida 100%
 
 ## Aviso
-Código desenvolvido para uso pessoal e pode possuir bugs, não confie 100%
+Código desenvolvido para uso pessoal e pode possuir bugs, não confie 100%. Caso você venda as suas ações é necessário realizar outras declarações que o código não contempla. 
 
 ### Declare, não seja trouxa de cair na malha fina, cuidado pois o leão vai te pegar 🦁
