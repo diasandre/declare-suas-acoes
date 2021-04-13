@@ -27,8 +27,8 @@ const headless = true;
 const selectedYear = "2020";
 // atualizar a data tbm no arquivo crawlerInfo.js
 
-const login = "LOGIN";
-const password = "SENHA";
+const login = "07872091984";
+const password = "Ron@ldu1995";
 
 (async () => {
   const browser = await puppeteer.launch({
@@ -134,9 +134,11 @@ const password = "SENHA";
         cnpj = await getCNPJInfo(browser, key);
       }
 
+      const median = actualYear.totalPrice / actualYear.quantity;
+
       return {
         cnpj,
-        discriminacao: `${actualYear.quantity} AÇÕES ${key} PELO VALOR TOTAL DE R$ ${actualYear.totalPrice}, ONDE CADA AÇÃO CUSTOU O PREÇO MÉDIO DE R$ ${actualYear.price}`,
+        discriminacao: `${actualYear.quantity} AÇÕES ${key} PELO VALOR TOTAL DE R$ ${actualYear.totalPrice}, ONDE CADA AÇÃO CUSTOU O PREÇO MÉDIO DE R$ ${median}`,
         valorNoFinalDoAnoPassado:
           lastYears != null ? lastYears.totalPrice : lastYears,
         valorNoFinalDoAnoAtual: actualYear.totalPrice,
