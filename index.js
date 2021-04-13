@@ -27,8 +27,8 @@ const headless = true;
 const selectedYear = "2020";
 // atualizar a data tbm no arquivo crawlerInfo.js
 
-const login = "07872091984";
-const password = "Ron@ldu1995";
+const login = "LOGIN";
+const password = "SENHA";
 
 (async () => {
   const browser = await puppeteer.launch({
