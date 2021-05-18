@@ -11,14 +11,19 @@ export const getInfo = async (browser, agent) => {
 
   await newPage.click(SELECTORS.SEARCH_BUTTON);
 
-  await newPage.waitForSelector(SELECTORS.RESULT_DIV_ID);
+  await newPage.waitForTimeout(5000);
 
   const data = await newPage.evaluate(
     () =>
       document.querySelector(
-        "#ctl00_ContentPlaceHolder1_rptAgenteBolsa_ctl00_rptContaBolsa_ctl00_pnAtivosNegociados table" //SELECTORS dont exist inside evalute
-      ).outerHTML
+        "#ctl00_ContentPlaceHolder1_rptAgenteBolsa_ctl00_rptContaBolsa_ctl00_pnAtivosNegociados table"
+      )?.outerHTML
   );
+
+  if (data == null) {
+    await newPage.close();
+    return data;
+  }
 
   const parsedData = HtmlTableToJson.parse(data);
 

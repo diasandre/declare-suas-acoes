@@ -23,6 +23,7 @@ import {
 const width = 1024;
 const height = 1600;
 const headless = true;
+const devtools = false;
 
 const selectedYear = "2020";
 // atualizar a data tbm no arquivo crawlerInfo.js
@@ -34,6 +35,7 @@ const password = "SENHA";
   const browser = await puppeteer.launch({
     defaultViewport: { width: width, height: height },
     headless,
+    devtools,
   });
 
   const page = await browser.newPage();
@@ -57,7 +59,9 @@ const password = "SENHA";
 
   for (const agent of agents) {
     const result = await getInfo(browser, agent);
-    crawlerResults = [...crawlerResults, result];
+    if (result != null) {
+      crawlerResults = [...crawlerResults, result];
+    }
   }
 
   const flatMapAndGroupById = _.chain(crawlerResults)
